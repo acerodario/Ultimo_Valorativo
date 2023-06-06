@@ -80,7 +80,7 @@ public class CRUDExample extends JFrame {
 
         gbc.gridx = 1;
         panelFormulario.add(txtGustos, gbc);
-        
+
         gbc.gridx = 0;
         gbc.gridy = 5;
         gbc.gridwidth = 2;
@@ -164,6 +164,7 @@ public class CRUDExample extends JFrame {
         pack();
         setVisible(true);
     }
+
     private void guardarRegistro() {
         String nombre = txtNombre.getText();
         String apellido = txtApellido.getText();
@@ -218,54 +219,23 @@ public class CRUDExample extends JFrame {
     }
 
     private void buscarRegistro() {
-        String searchTerm = JOptionPane.showInputDialog(this, "Ingrese el nombre a buscar:");
-        if (searchTerm != null && !searchTerm.isEmpty()) {
-            for (int i = 0; i < model.getRowCount(); i++) {
-                String nombre = (String) model.getValueAt(i, 0);
-                if (nombre.equalsIgnoreCase(searchTerm)) {
-                    table.setRowSelectionInterval(i, i);
-                    table.scrollRectToVisible(table.getCellRect(i, 0, true));
+        String searchTerm = JOptionPane.showInputDialog(this, "Ingrese el término de búsqueda", "Buscar", JOptionPane.QUESTION_MESSAGE);
+        if (searchTerm != null) {
+            searchTerm = searchTerm.toLowerCase();
+            for (int row = 0; row < model.getRowCount(); row++) {
+                String nombre = (String) model.getValueAt(row, 0);
+                String apellido = (String) model.getValueAt(row, 1);
+                String correo = (String) model.getValueAt(row, 2);
+                String carrera = (String) model.getValueAt(row, 3);
+                String gustos = (String) model.getValueAt(row, 4);
+
+                if (nombre.toLowerCase().contains(searchTerm) || apellido.toLowerCase().contains(searchTerm)
+                        || correo.toLowerCase().contains(searchTerm) || carrera.toLowerCase().contains(searchTerm)
+                        || gustos.toLowerCase().contains(searchTerm)) {
+                    table.setRowSelectionInterval(row, row);
                     break;
                 }
             }
-        }
-    }
-
-    private void cargarRegistros() {
-        try {
-            File file = new File("registros.bin");
-            if (file.exists()) {
-                ObjectInputStream inputStream = new ObjectInputStream(new FileInputStream(file));
-                ArrayList<String[]> registros = (ArrayList<String[]>) inputStream.readObject();
-                inputStream.close();
-
-                for (String[] registro : registros) {
-                    model.addRow(registro);
-                }
-            }
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void guardarRegistros() {
-        try {
-            File file = new File("registros.bin");
-            ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream(file));
-            ArrayList<String[]> registros = new ArrayList<>();
-            for (int i = 0; i < model.getRowCount(); i++) {
-                String[] registro = new String[5];
-                registro[0] = (String) model.getValueAt(i, 0);
-                registro[1] = (String) model.getValueAt(i, 1);
-                registro[2] = (String) model.getValueAt(i, 2);
-                registro[3] = (String) model.getValueAt(i, 3);
-                registro[4] = (String) model.getValueAt(i, 4);
-                registros.add(registro);
-            }
-            outputStream.writeObject(registros);
-            outputStream.close();
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 
@@ -275,6 +245,44 @@ public class CRUDExample extends JFrame {
         txtCorreo.setText("");
         txtCarrera.setText("");
         txtGustos.setText("");
+        table.clearSelection();
+    }
+
+    private void guardarRegistros() {
+        try {
+            ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream("registros.bin"));
+            ArrayList<Registro> registros = new ArrayList<>();
+            for (int row = 0; row < model.getRowCount(); row++) {
+                String nombre = (String) model.getValueAt(row, 0);
+                String apellido = (String) model.getValueAt(row, 1);
+                String correo = (String) model.getValueAt(row, 2);
+                String carrera = (String) model.getValueAt(row, 3);
+                String gustos = (String) model.getValueAt(row, 4);
+                Registro registro = new Registro(nombre, apellido, correo, carrera, gustos);
+                registros.add(registro);
+            }
+            oos.writeObject(registros);
+            oos.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void cargarRegistros() {
+        try {
+            File file = new File("registros.bin");
+            if (file.exists()) {
+                ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file));
+                ArrayList<Registro> registros = (ArrayList<Registro>) ois.readObject();
+                ois.close();
+                for (Registro registro : registros) {
+                    Object[] row = {registro.getNombre(), registro.getApellido(), registro.getCorreo(), registro.getCarrera(), registro.getGustos()};
+                    model.addRow(row);
+                }
+            }
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
     }
 
     public static void main(String[] args) {
